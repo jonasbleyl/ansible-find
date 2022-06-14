@@ -17,6 +17,7 @@ const (
 
 var (
 	showFileNamesOnly bool
+	regex             bool
 )
 
 func setupFind(cmd *cobra.Command) {
@@ -24,43 +25,52 @@ func setupFind(cmd *cobra.Command) {
 		Use:   "find VARIABLE [DIRECTORY]",
 		Short: "Find where ansible variables are defined",
 		Args:  cobra.RangeArgs(1, 2),
-		RunE:  findRun,
+		RunE:  runFind,
 	}
 
 	findCmd.Flags().BoolVarP(&showFileNamesOnly, "files-with-matches", "l", false, "Only print the filenames of matching files")
+	findCmd.Flags().BoolVarP(&regex, "regex", "r", false, "Use regex to search for variables")
 
 	cmd.AddCommand(findCmd)
 }
 
-func findRun(cmd *cobra.Command, args []string) error {
-	variable := args[0]
+func runFind(cmd *cobra.Command, args []string) error {
 	dir := "."
-
 	if len(args) > 1 {
 		dir = args[1]
 	}
 
 	contents, err := os.ReadFile(vaultFile)
+	if err != nil {
+		return err
+	}
 	password := strings.TrimSuffix(string(contents), "\n")
+
+	results, err := executeFind(args[0], dir, password)
 	if err != nil {
 		return err
 	}
+	outputFind(cmd, results)
+	return nil
+}
 
-	results, err := ansible.Find(dir, password, variable)
-	if err != nil {
-		return err
+func executeFind(variable, dir, password string) ([]ansible.Result, error) {
+	if regex {
+		return ansible.FindRegex(dir, password, variable)
 	}
+	return ansible.Find(dir, password, variable)
+}
 
+func outputFind(cmd *cobra.Command, results []ansible.Result) {
 	for _, r := range results {
 		cmd.Println(fmt.Sprintf("%s%s%s", startBlueOutput, r.Path, stopColorOutput))
 
 		if !showFileNamesOnly {
 			output := make(map[any]any)
-			output[variable] = r.Value
+			output[r.Variable] = r.Value
 
 			yml, _ := yaml.Marshal(&output)
 			cmd.Print(string(yml))
 		}
 	}
-	return nil
 }

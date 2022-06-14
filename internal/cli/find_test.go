@@ -14,12 +14,16 @@ func TestFind(t *testing.T) {
 		want string
 	}{
 		"default": {
-			args: "find encrypted_var ../../testdata/defaults --vault ../../testdata/.vault",
-			want: startBlueOutput + "../../testdata/defaults/vault.yaml" + stopColorOutput + "\nencrypted_var: value\n",
+			args: "find test_var ../../testdata/defaults --vault ../../testdata/.vault",
+			want: startBlueOutput + "../../testdata/defaults/vault.yaml" + stopColorOutput + "\ntest_var: value\n",
 		},
 		"filenames only": {
-			args: "find encrypted_var ../../testdata/defaults --vault ../../testdata/.vault --files-with-matches",
+			args: "find test_var ../../testdata/defaults --vault ../../testdata/.vault --files-with-matches",
 			want: startBlueOutput + "../../testdata/defaults/vault.yaml" + stopColorOutput + "\n",
+		},
+		"regex": {
+			args: "find --regex test_.* ../../testdata/defaults --vault ../../testdata/.vault",
+			want: startBlueOutput + "../../testdata/defaults/vault.yaml" + stopColorOutput + "\ntest_var: value\n",
 		},
 	}
 
@@ -32,7 +36,7 @@ func TestFind(t *testing.T) {
 	}
 }
 
-func TestFindError(t *testing.T) {
+func TestFind_error(t *testing.T) {
 	tests := map[string]struct {
 		args string
 	}{

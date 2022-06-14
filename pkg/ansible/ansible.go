@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/samber/lo"
@@ -27,12 +28,25 @@ func Find(root, password, variable string) ([]Result, error) {
 	var results []Result
 
 	err := walk(root, password, func(path string, yml map[any]any, isVault bool) {
-		if value, found := yml[variable]; found {
-			results = append(results, Result{
-				Path:     path,
-				Variable: variable,
-				Value:    value,
-			})
+		if v, found := yml[variable]; found {
+			results = append(results, Result{Path: path, Variable: variable, Value: v})
+		}
+	})
+	return results, err
+}
+
+func FindRegex(root, password, variable string) ([]Result, error) {
+	var results []Result
+	rgx, err := regexp.Compile(variable)
+	if err != nil {
+		return nil, err
+	}
+
+	err = walk(root, password, func(path string, yml map[any]any, isVault bool) {
+		for k, v := range yml {
+			if rgx.MatchString(k.(string)) {
+				results = append(results, Result{Path: path, Variable: k.(string), Value: v})
+			}
 		}
 	})
 	return results, err
