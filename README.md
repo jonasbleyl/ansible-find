@@ -1,11 +1,11 @@
 # ansible-find
 
-An Ansible CLI tool to find where ansible variables are defined.
+A CLI tool to find where ansible variables are defined.
 
 ## Install
 
 ```
-go install github.com/jonasbleyl/ansible-find
+go install github.com/jonasbleyl/ansible-find@latest
 ```
 
 ## Usage
@@ -13,7 +13,7 @@ go install github.com/jonasbleyl/ansible-find
 ```
 A CLI tool to find where ansible variables are defined.
 
-This tool will only use variable YAML files that reside within the
+This tool will only search YAML files that reside within the
 following directories: [group_vars, host_vars, defaults, vars]
 
 Usage:

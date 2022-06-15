@@ -27,7 +27,7 @@ func Setup() *cobra.Command {
 		Use: "ansible-find VARIABLE [DIRECTORY]",
 		Long: `A CLI tool to find where ansible variables are defined.
 
-This tool will only use variable YAML files that reside within the
+This tool will only search YAML files that reside within the
 following directories: [group_vars, host_vars, defaults, vars]`,
 		Args: cobra.RangeArgs(1, 2),
 		RunE: run,
