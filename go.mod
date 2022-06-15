@@ -1,4 +1,4 @@
-module github.com/jonasbleyl/ansible-vars
+module github.com/jonasbleyl/ansible-find
 
 go 1.18
 

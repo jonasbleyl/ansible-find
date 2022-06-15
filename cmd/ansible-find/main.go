@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/jonasbleyl/ansible-vars/internal/cli"
+	"github.com/jonasbleyl/ansible-find/internal/cli"
 )
 
 func main() {

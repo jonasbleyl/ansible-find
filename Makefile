@@ -8,4 +8,4 @@ report: coverage
 	go tool cover -html=coverage.out
 
 build:
-	go build -o ansible-vars cmd/ansible-vars/main.go
+	go build -o ansible-find cmd/ansible-find/main.go

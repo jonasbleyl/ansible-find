@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jonasbleyl/ansible-vars/pkg/ansible"
+	"github.com/jonasbleyl/ansible-find/pkg/ansible"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -16,25 +16,30 @@ const (
 )
 
 var (
+	vaultFile         string
 	showFileNamesOnly bool
 	regex             bool
 )
 
-func setupFind(cmd *cobra.Command) {
-	findCmd := &cobra.Command{
-		Use:   "find VARIABLE [DIRECTORY]",
-		Short: "Find where ansible variables are defined",
-		Args:  cobra.RangeArgs(1, 2),
-		RunE:  runFind,
+func Setup() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "ansible-find VARIABLE [DIRECTORY]",
+		Long: `A CLI tool to help find where ansible variables are defined.
+
+This tool will only use variable YAML files that reside within one of
+the following directories: [group_vars, host_vars, defaults, vars]`,
+		Args: cobra.RangeArgs(1, 2),
+		RunE: run,
 	}
 
-	findCmd.Flags().BoolVarP(&showFileNamesOnly, "files-with-matches", "l", false, "Only print the filenames of matching files")
-	findCmd.Flags().BoolVarP(&regex, "regex", "r", false, "Use regex to search for variables")
+	cmd.Flags().StringVarP(&vaultFile, "vault", "v", ".vault", "ansible vault password file")
+	cmd.Flags().BoolVarP(&showFileNamesOnly, "files-with-matches", "l", false, "only print the filenames of matching files")
+	cmd.Flags().BoolVarP(&regex, "regex", "r", false, "use regex to search for variables")
 
-	cmd.AddCommand(findCmd)
+	return cmd
 }
 
-func runFind(cmd *cobra.Command, args []string) error {
+func run(cmd *cobra.Command, args []string) error {
 	dir := "."
 	if len(args) > 1 {
 		dir = args[1]
@@ -46,22 +51,22 @@ func runFind(cmd *cobra.Command, args []string) error {
 	}
 	password := strings.TrimSuffix(string(contents), "\n")
 
-	results, err := executeFind(args[0], dir, password)
+	results, err := execute(args[0], dir, password)
 	if err != nil {
 		return err
 	}
-	outputFind(cmd, results)
+	output(cmd, results)
 	return nil
 }
 
-func executeFind(variable, dir, password string) ([]ansible.Result, error) {
+func execute(variable, dir, password string) ([]ansible.Result, error) {
 	if regex {
 		return ansible.FindRegex(dir, password, variable)
 	}
 	return ansible.Find(dir, password, variable)
 }
 
-func outputFind(cmd *cobra.Command, results []ansible.Result) {
+func output(cmd *cobra.Command, results []ansible.Result) {
 	for _, r := range results {
 		cmd.Println(fmt.Sprintf("%s%s%s", startBlueOutput, r.Path, stopColorOutput))
 

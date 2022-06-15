@@ -14,22 +14,22 @@ func TestFind(t *testing.T) {
 		want string
 	}{
 		"default": {
-			args: "find test_var ../../testdata/defaults --vault ../../testdata/.vault",
+			args: "test_var ../../testdata/defaults --vault ../../testdata/.vault",
 			want: startBlueOutput + "../../testdata/defaults/vault.yaml" + stopColorOutput + "\ntest_var: value\n",
 		},
 		"filenames only": {
-			args: "find test_var ../../testdata/defaults --vault ../../testdata/.vault --files-with-matches",
+			args: "test_var ../../testdata/defaults --vault ../../testdata/.vault --files-with-matches",
 			want: startBlueOutput + "../../testdata/defaults/vault.yaml" + stopColorOutput + "\n",
 		},
 		"regex": {
-			args: "find --regex test_.* ../../testdata/defaults --vault ../../testdata/.vault",
+			args: "--regex test_.* ../../testdata/defaults --vault ../../testdata/.vault",
 			want: startBlueOutput + "../../testdata/defaults/vault.yaml" + stopColorOutput + "\ntest_var: value\n",
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			out, err := execute(tc.args)
+			out, err := testExecute(tc.args)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.want, out)
 		})
@@ -40,24 +40,24 @@ func TestFind_error(t *testing.T) {
 	tests := map[string]struct {
 		args string
 	}{
-		"invalid directory":  {args: "find var /does/not/exist --vault ../../testdata/.vault"},
-		"invalid vault file": {args: "find var ../../testdata/group_vars --vault does/not/exist"},
+		"invalid directory":  {args: "test_var /does/not/exist --vault ../../testdata/.vault"},
+		"invalid vault file": {args: "test_var ../../testdata/group_vars --vault does/not/exist"},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			_, err := execute(tc.args)
+			_, err := testExecute(tc.args)
 			assert.Error(t, err)
 		})
 	}
 }
 
-func execute(args string) (string, error) {
+func testExecute(args string) (string, error) {
 	out := new(bytes.Buffer)
-	rootCmd := Setup()
-	rootCmd.SetOut(out)
-	rootCmd.SetErr(out)
-	rootCmd.SetArgs(strings.Split(args, " "))
-	err := rootCmd.Execute()
+	cmd := Setup()
+	cmd.SetOut(out)
+	cmd.SetErr(out)
+	cmd.SetArgs(strings.Split(args, " "))
+	err := cmd.Execute()
 	return out.String(), err
 }
