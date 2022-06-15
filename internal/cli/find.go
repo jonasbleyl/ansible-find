@@ -68,22 +68,23 @@ func execute(variable, dir, password string) ([]ansible.Result, error) {
 
 func output(cmd *cobra.Command, results []ansible.Result) error {
 	for _, r := range results {
-		cmd.Println(fmt.Sprintf("%s%s%s", startBlueOutput, r.Path, stopColorOutput))
-
-		if !showFileNamesOnly {
-			yml := map[string]yaml.Node{r.Variable: r.Value}
-
-			var b bytes.Buffer
-			encoder := yaml.NewEncoder(&b)
-			encoder.SetIndent(2)
-
-			err := encoder.Encode(&yml)
-			if err != nil {
-				return err
-			}
-
-			cmd.Print(b.String())
+		if showFileNamesOnly {
+			cmd.Println(r.Path)
+			continue
 		}
+
+		var b bytes.Buffer
+		encoder := yaml.NewEncoder(&b)
+		encoder.SetIndent(2)
+
+		yml := map[string]yaml.Node{r.Variable: r.Value}
+		err := encoder.Encode(&yml)
+		if err != nil {
+			return err
+		}
+
+		cmd.Println(fmt.Sprintf("%s%s%s", startBlueOutput, r.Path, stopColorOutput))
+		cmd.Print(b.String())
 	}
 	return nil
 }

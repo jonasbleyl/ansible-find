@@ -19,7 +19,7 @@ func TestFind(t *testing.T) {
 		},
 		"filenames only": {
 			args: "test_var ../../testdata/defaults --vault ../../testdata/.vault --files-with-matches",
-			want: startBlueOutput + "../../testdata/defaults/vault.yaml" + stopColorOutput + "\n",
+			want: "../../testdata/defaults/vault.yaml\n",
 		},
 		"regex": {
 			args: "--regex test_.* ../../testdata/defaults --vault ../../testdata/.vault",
