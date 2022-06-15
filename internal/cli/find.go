@@ -7,7 +7,7 @@ import (
 
 	"github.com/jonasbleyl/ansible-vars/pkg/ansible"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -66,7 +66,7 @@ func outputFind(cmd *cobra.Command, results []ansible.Result) {
 		cmd.Println(fmt.Sprintf("%s%s%s", startBlueOutput, r.Path, stopColorOutput))
 
 		if !showFileNamesOnly {
-			output := make(map[any]any)
+			output := make(map[string]yaml.Node)
 			output[r.Variable] = r.Value
 
 			yml, _ := yaml.Marshal(&output)

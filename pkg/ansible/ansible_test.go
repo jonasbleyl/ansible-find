@@ -1,6 +1,7 @@
 package ansible
 
 import (
+	"gopkg.in/yaml.v3"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,15 +14,21 @@ var (
 
 func TestFind(t *testing.T) {
 	want := []Result{
-		{Path: testDataDir + "/defaults/vault.yaml", Variable: "test_var", Value: "value"},
-		{Path: testDataDir + "/group_vars/vault.yaml", Variable: "test_var", Value: "value"},
-		{Path: testDataDir + "/host_vars/vault.yaml", Variable: "test_var", Value: "value"},
-		{Path: testDataDir + "/inventories/host_vars/vault.yaml", Variable: "test_var", Value: "value"},
-		{Path: testDataDir + "/vars/vars.yml", Variable: "test_var", Value: "value"},
+		{Path: testDataDir + "/defaults/vault.yaml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
+		{Path: testDataDir + "/group_vars/vault.yaml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
+		{Path: testDataDir + "/host_vars/vault.yaml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
+		{Path: testDataDir + "/inventories/host_vars/vault.yaml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
+		{Path: testDataDir + "/vars/vars.yml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
 	}
 	results, err := Find(testDataDir, vaultPassword, "test_var")
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, results, want)
+	assert.Len(t, results, len(want))
+
+	for i, r := range results {
+		assert.Equal(t, want[i].Path, r.Path)
+		assert.Equal(t, want[i].Variable, r.Variable)
+		assert.Equal(t, want[i].Value.Value, r.Value.Value)
+	}
 }
 
 func TestFind_error(t *testing.T) {
@@ -44,15 +51,20 @@ func TestFind_error(t *testing.T) {
 
 func TestFindRegex(t *testing.T) {
 	want := []Result{
-		{Path: testDataDir + "/defaults/vault.yaml", Variable: "test_var", Value: "value"},
-		{Path: testDataDir + "/group_vars/vault.yaml", Variable: "test_var", Value: "value"},
-		{Path: testDataDir + "/host_vars/vault.yaml", Variable: "test_var", Value: "value"},
-		{Path: testDataDir + "/inventories/host_vars/vault.yaml", Variable: "test_var", Value: "value"},
-		{Path: testDataDir + "/vars/vars.yml", Variable: "test_var", Value: "value"},
+		{Path: testDataDir + "/defaults/vault.yaml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
+		{Path: testDataDir + "/group_vars/vault.yaml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
+		{Path: testDataDir + "/host_vars/vault.yaml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
+		{Path: testDataDir + "/inventories/host_vars/vault.yaml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
+		{Path: testDataDir + "/vars/vars.yml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
 	}
 	results, err := FindRegex(testDataDir, vaultPassword, "test_.*")
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, results, want)
+
+	for i, r := range results {
+		assert.Equal(t, want[i].Path, r.Path)
+		assert.Equal(t, want[i].Variable, r.Variable)
+		assert.Equal(t, want[i].Value.Value, r.Value.Value)
+	}
 }
 
 func TestFindRegex_badRegex(t *testing.T) {

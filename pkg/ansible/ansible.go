@@ -10,7 +10,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/sosedoff/ansible-vault-go"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -21,13 +21,13 @@ var (
 type Result struct {
 	Path     string
 	Variable string
-	Value    any
+	Value    yaml.Node
 }
 
 func Find(root, password, variable string) ([]Result, error) {
 	var results []Result
 
-	err := walk(root, password, func(path string, yml map[any]any, isVault bool) {
+	err := walk(root, password, func(path string, yml map[string]yaml.Node, isVault bool) {
 		if v, found := yml[variable]; found {
 			results = append(results, Result{Path: path, Variable: variable, Value: v})
 		}
@@ -42,17 +42,17 @@ func FindRegex(root, password, variable string) ([]Result, error) {
 		return nil, err
 	}
 
-	err = walk(root, password, func(path string, yml map[any]any, isVault bool) {
+	err = walk(root, password, func(path string, yml map[string]yaml.Node, isVault bool) {
 		for k, v := range yml {
-			if rgx.MatchString(k.(string)) {
-				results = append(results, Result{Path: path, Variable: k.(string), Value: v})
+			if rgx.MatchString(k) {
+				results = append(results, Result{Path: path, Variable: k, Value: v})
 			}
 		}
 	})
 	return results, err
 }
 
-func walk(root, password string, run func(path string, yml map[any]any, isVault bool)) error {
+func walk(root, password string, run func(path string, yml map[string]yaml.Node, isVault bool)) error {
 	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -76,7 +76,7 @@ func walk(root, password string, run func(path string, yml map[any]any, isVault 
 	})
 }
 
-func parseFile(path, password string) (map[any]any, bool, error) {
+func parseFile(path, password string) (map[string]yaml.Node, bool, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, false, err
@@ -91,7 +91,7 @@ func parseFile(path, password string) (map[any]any, bool, error) {
 		content = []byte(decrypted)
 	}
 
-	yml := make(map[any]any)
+	yml := make(map[string]yaml.Node)
 	err = yaml.Unmarshal(content, &yml)
 	return yml, isVault, err
 }
