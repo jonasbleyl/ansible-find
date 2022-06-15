@@ -15,7 +15,7 @@ import (
 
 var (
 	vaultHeader  = []byte("$ANSIBLE_VAULT;1.1;AES256")
-	variableDirs = []string{"/group_vars/", "/host_vars/", "/defaults/", "/vars/"}
+	variableDirs = []string{"group_vars", "host_vars", "defaults", "vars"}
 )
 
 type Result struct {
@@ -60,7 +60,9 @@ func walk(root, password string, run func(path string, yml map[string]yaml.Node,
 		if d.IsDir() && d.Name() != root && strings.HasPrefix(d.Name(), ".") {
 			return filepath.SkipDir
 		}
-		if !lo.ContainsBy(variableDirs, func(dir string) bool { return strings.Contains(path, dir) }) {
+
+		parts := strings.Split(path, "/")
+		if !lo.ContainsBy(variableDirs, func(dir string) bool { return lo.Contains(parts, dir) }) {
 			return nil
 		}
 		if !lo.Contains([]string{".yaml", ".yml"}, filepath.Ext(d.Name())) {
