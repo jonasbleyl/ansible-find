@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
@@ -55,8 +56,7 @@ func run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	output(cmd, results)
-	return nil
+	return output(cmd, results)
 }
 
 func execute(variable, dir, password string) ([]ansible.Result, error) {
@@ -66,16 +66,24 @@ func execute(variable, dir, password string) ([]ansible.Result, error) {
 	return ansible.Find(dir, password, variable)
 }
 
-func output(cmd *cobra.Command, results []ansible.Result) {
+func output(cmd *cobra.Command, results []ansible.Result) error {
 	for _, r := range results {
 		cmd.Println(fmt.Sprintf("%s%s%s", startBlueOutput, r.Path, stopColorOutput))
 
 		if !showFileNamesOnly {
-			output := make(map[string]yaml.Node)
-			output[r.Variable] = r.Value
+			yml := map[string]yaml.Node{r.Variable: r.Value}
 
-			yml, _ := yaml.Marshal(&output)
-			cmd.Print(string(yml))
+			var b bytes.Buffer
+			encoder := yaml.NewEncoder(&b)
+			encoder.SetIndent(2)
+
+			err := encoder.Encode(&yml)
+			if err != nil {
+				return err
+			}
+
+			cmd.Print(b.String())
 		}
 	}
+	return nil
 }
