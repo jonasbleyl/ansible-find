@@ -27,7 +27,7 @@ type Result struct {
 func Find(root, password, variable string) ([]Result, error) {
 	var results []Result
 
-	err := walk(root, password, func(path string, yml map[string]yaml.Node, isVault bool) {
+	err := walk(root, password, func(path string, yml map[string]yaml.Node) {
 		if v, found := yml[variable]; found {
 			results = append(results, Result{Path: path, Variable: variable, Value: v})
 		}
@@ -42,7 +42,7 @@ func FindRegex(root, password, variable string) ([]Result, error) {
 		return nil, err
 	}
 
-	err = walk(root, password, func(path string, yml map[string]yaml.Node, isVault bool) {
+	err = walk(root, password, func(path string, yml map[string]yaml.Node) {
 		for k, v := range yml {
 			if rgx.MatchString(k) {
 				results = append(results, Result{Path: path, Variable: k, Value: v})
@@ -52,7 +52,7 @@ func FindRegex(root, password, variable string) ([]Result, error) {
 	return results, err
 }
 
-func walk(root, password string, run func(path string, yml map[string]yaml.Node, isVault bool)) error {
+func walk(root, password string, run func(path string, yml map[string]yaml.Node)) error {
 	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -69,31 +69,30 @@ func walk(root, password string, run func(path string, yml map[string]yaml.Node,
 			return nil
 		}
 
-		yml, isVault, err := parseFile(path, password)
+		yml, err := parseFile(path, password)
 		if err != nil {
 			return err
 		}
-		run(path, yml, isVault)
+		run(path, yml)
 		return nil
 	})
 }
 
-func parseFile(path, password string) (map[string]yaml.Node, bool, error) {
+func parseFile(path, password string) (map[string]yaml.Node, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
-	isVault := bytes.HasPrefix(content, vaultHeader)
-	if isVault {
+	if bytes.HasPrefix(content, vaultHeader) {
 		decrypted, err := vault.Decrypt(string(content), password)
 		if err != nil {
-			return nil, isVault, err
+			return nil, err
 		}
 		content = []byte(decrypted)
 	}
 
 	yml := make(map[string]yaml.Node)
 	err = yaml.Unmarshal(content, &yml)
-	return yml, isVault, err
+	return yml, err
 }
