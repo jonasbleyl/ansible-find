@@ -23,7 +23,7 @@ func TestFind(t *testing.T) {
 		},
 		"regex": {
 			args: "--regex test_.* ../../testdata/defaults --vault ../../testdata/.vault",
-			want: startBlueOutput + "../../testdata/defaults/vault.yaml" + stopColorOutput + "\ntest_var: value\n",
+			want: startBlueOutput + "../../testdata/defaults/vault.yaml" + stopColorOutput + "\ntest_var: value\ntest_var2: value\n",
 		},
 	}
 

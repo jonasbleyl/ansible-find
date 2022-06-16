@@ -67,6 +67,8 @@ func execute(variable, dir, password string) ([]ansible.Result, error) {
 }
 
 func output(cmd *cobra.Command, results []ansible.Result) error {
+	lastPath := ""
+
 	for _, r := range results {
 		if showFileNamesOnly {
 			cmd.Println(r.Path)
@@ -83,7 +85,10 @@ func output(cmd *cobra.Command, results []ansible.Result) error {
 			return err
 		}
 
-		cmd.Println(fmt.Sprintf("%s%s%s", startBlueOutput, r.Path, stopColorOutput))
+		if lastPath != r.Path {
+			cmd.Println(fmt.Sprintf("%s%s%s", startBlueOutput, r.Path, stopColorOutput))
+			lastPath = r.Path
+		}
 		cmd.Print(b.String())
 	}
 	return nil

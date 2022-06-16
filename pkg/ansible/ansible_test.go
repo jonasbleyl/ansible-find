@@ -52,6 +52,7 @@ func TestFind_error(t *testing.T) {
 func TestFindRegex(t *testing.T) {
 	want := []Result{
 		{Path: testDataDir + "/defaults/vault.yaml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
+		{Path: testDataDir + "/defaults/vault.yaml", Variable: "test_var2", Value: yaml.Node{Value: "value"}},
 		{Path: testDataDir + "/group_vars/vault.yaml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
 		{Path: testDataDir + "/host_vars/vault.yaml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
 		{Path: testDataDir + "/inventories/host_vars/vault.yaml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
