@@ -3,6 +3,7 @@ package ansible
 import (
 	"bytes"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -26,7 +27,10 @@ type Result struct {
 
 func decryptVariable(v *yaml.Node, password string) {
 	if bytes.HasPrefix([]byte(v.Value), vaultHeader) {
-		decrypted, _ := vault.Decrypt(v.Value, password)
+		decrypted, err := vault.Decrypt(v.Value, password)
+		if err != nil {
+			log.Fatal(err)
+		}
 		v.Value = decrypted
 	}
 }
