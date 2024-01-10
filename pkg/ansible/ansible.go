@@ -3,7 +3,6 @@ package ansible
 import (
 	"bytes"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -25,24 +24,18 @@ type Result struct {
 	Value    yaml.Node
 }
 
-func decryptVariable(v *yaml.Node, password string) {
-	if bytes.HasPrefix([]byte(v.Value), vaultHeader) {
-		decrypted, err := vault.Decrypt(v.Value, password)
-		if err != nil {
-			log.Fatal(err)
-		}
-		v.Value = decrypted
-	}
-}
-
 func Find(root, password, variable string) ([]Result, error) {
 	var results []Result
 
-	err := walk(root, password, func(path string, yml map[string]yaml.Node) {
+	err := walk(root, password, func(path string, yml map[string]yaml.Node) error {
 		if v, found := yml[variable]; found {
-			decryptVariable(&v, password)
+			err := decryptVariable(&v, password)
+			if err != nil {
+				return err
+			}
 			results = append(results, Result{Path: path, Variable: variable, Value: v})
 		}
+		return nil
 	})
 	return results, err
 }
@@ -54,18 +47,22 @@ func FindRegex(root, password, variable string) ([]Result, error) {
 		return nil, err
 	}
 
-	err = walk(root, password, func(path string, yml map[string]yaml.Node) {
+	err = walk(root, password, func(path string, yml map[string]yaml.Node) error {
 		for k, v := range yml {
 			if rgx.MatchString(k) {
-				decryptVariable(&v, password)
+				err := decryptVariable(&v, password)
+				if err != nil {
+					return err
+				}
 				results = append(results, Result{Path: path, Variable: k, Value: v})
 			}
 		}
+		return nil
 	})
 	return results, err
 }
 
-func walk(root, password string, run func(path string, yml map[string]yaml.Node)) error {
+func walk(root, password string, run func(path string, yml map[string]yaml.Node) error) error {
 	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -86,8 +83,7 @@ func walk(root, password string, run func(path string, yml map[string]yaml.Node)
 		if err != nil {
 			return err
 		}
-		run(path, yml)
-		return nil
+		return run(path, yml)
 	})
 }
 
@@ -108,4 +104,15 @@ func parseFile(path, password string) (map[string]yaml.Node, error) {
 	yml := make(map[string]yaml.Node)
 	err = yaml.Unmarshal(content, &yml)
 	return yml, err
+}
+
+func decryptVariable(v *yaml.Node, password string) error {
+	if bytes.HasPrefix([]byte(v.Value), vaultHeader) {
+		decrypted, err := vault.Decrypt(v.Value, password)
+		if err != nil {
+			return err
+		}
+		v.Value = decrypted
+	}
+	return nil
 }
