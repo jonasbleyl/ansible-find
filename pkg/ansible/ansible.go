@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
-	"github.com/samber/lo"
 	"github.com/sosedoff/ansible-vault-go"
 	"gopkg.in/yaml.v3"
 )
@@ -72,10 +72,10 @@ func walk(root, password string, run func(path string, yml map[string]yaml.Node)
 		}
 
 		parts := strings.Split(path, "/")
-		if !lo.ContainsBy(variableDirs, func(dir string) bool { return lo.Contains(parts, dir) }) {
+		if !slices.ContainsFunc(variableDirs, func(dir string) bool { return slices.Contains(parts, dir) }) {
 			return nil
 		}
-		if !lo.Contains([]string{".yaml", ".yml"}, filepath.Ext(d.Name())) {
+		if !slices.Contains([]string{".yaml", ".yml"}, filepath.Ext(d.Name())) {
 			return nil
 		}
 
