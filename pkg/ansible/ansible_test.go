@@ -1,10 +1,11 @@
 package ansible
 
 import (
-	"gopkg.in/yaml.v3"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -19,31 +20,11 @@ func TestFind(t *testing.T) {
 		{Path: testDataDir + "/host_vars/vault.yaml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
 		{Path: testDataDir + "/inventories/host_vars/vault.yaml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
 		{Path: testDataDir + "/vars/vars.yml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
+		{Path: testDataDir + "/group_vars/values.yaml", Variable: "test_var", Value: yaml.Node{Value: "this value is encrypted"}},
 	}
 	results, err := Find(testDataDir, vaultPassword, "test_var")
 	assert.NoError(t, err)
-	assert.Len(t, results, len(want))
-
-	for i, r := range results {
-		assert.Equal(t, want[i].Path, r.Path)
-		assert.Equal(t, want[i].Variable, r.Variable)
-		assert.Equal(t, want[i].Value.Value, r.Value.Value)
-	}
-}
-
-func TestFindEncryptedString(t *testing.T) {
-	want := []Result{
-		{Path: testDataDir + "/group_vars/values.yaml", Variable: "myencrypted_var", Value: yaml.Node{Value: "this value is encrypted"}},
-	}
-	results, err := Find(testDataDir, vaultPassword, "myencrypted_var")
-	assert.NoError(t, err)
-	assert.Len(t, results, len(want))
-
-	for i, r := range results {
-		assert.Equal(t, want[i].Path, r.Path)
-		assert.Equal(t, want[i].Variable, r.Variable)
-		assert.Equal(t, want[i].Value.Value, r.Value.Value)
-	}
+	assertResultsEqual(t, want, results)
 }
 
 func TestFind_error(t *testing.T) {
@@ -72,33 +53,40 @@ func TestFindRegex(t *testing.T) {
 		{Path: testDataDir + "/host_vars/vault.yaml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
 		{Path: testDataDir + "/inventories/host_vars/vault.yaml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
 		{Path: testDataDir + "/vars/vars.yml", Variable: "test_var", Value: yaml.Node{Value: "value"}},
+		{Path: testDataDir + "/group_vars/values.yaml", Variable: "test_var", Value: yaml.Node{Value: "this value is encrypted"}},
 	}
 	results, err := FindRegex(testDataDir, vaultPassword, "test_.*")
 	assert.NoError(t, err)
-
-	for i, r := range results {
-		assert.Equal(t, want[i].Path, r.Path)
-		assert.Equal(t, want[i].Variable, r.Variable)
-		assert.Equal(t, want[i].Value.Value, r.Value.Value)
-	}
-}
-
-func TestFindRegexEncryptedString(t *testing.T) {
-	want := []Result{
-		{Path: testDataDir + "/group_vars/values.yaml", Variable: "myencrypted_var", Value: yaml.Node{Value: "this value is encrypted"}},
-	}
-	results, err := FindRegex(testDataDir, vaultPassword, "myencrypted_*")
-	assert.NoError(t, err)
-	assert.Len(t, results, len(want))
-
-	for i, r := range results {
-		assert.Equal(t, want[i].Path, r.Path)
-		assert.Equal(t, want[i].Variable, r.Variable)
-		assert.Equal(t, want[i].Value.Value, r.Value.Value)
-	}
+	assertResultsEqual(t, want, results)
 }
 
 func TestFindRegex_badRegex(t *testing.T) {
 	_, err := FindRegex(testDataDir, vaultPassword, "*")
 	assert.Error(t, err)
+}
+
+func assertResultsEqual(t *testing.T, want, got []Result) {
+	t.Helper()
+
+	assert.Len(t, got, len(want))
+
+	sort.Slice(want, func(i, j int) bool {
+		if want[i].Path != want[j].Path {
+			return want[i].Path < want[j].Path
+		}
+		return want[i].Variable < want[j].Variable
+	})
+
+	sort.Slice(got, func(i, j int) bool {
+		if got[i].Path != got[j].Path {
+			return got[i].Path < got[j].Path
+		}
+		return got[i].Variable < got[j].Variable
+	})
+
+	for i, r := range got {
+		assert.Equal(t, want[i].Path, r.Path)
+		assert.Equal(t, want[i].Variable, r.Variable)
+		assert.Equal(t, want[i].Value.Value, r.Value.Value)
+	}
 }
