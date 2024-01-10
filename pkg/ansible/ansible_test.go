@@ -31,6 +31,21 @@ func TestFind(t *testing.T) {
 	}
 }
 
+func TestFindEncryptedString(t *testing.T) {
+	want := []Result{
+		{Path: testDataDir + "/group_vars/values.yaml", Variable: "myencrypted_var", Value: yaml.Node{Value: "this value is encrypted"}},
+	}
+	results, err := Find(testDataDir, vaultPassword, "myencrypted_var")
+	assert.NoError(t, err)
+	assert.Len(t, results, len(want))
+
+	for i, r := range results {
+		assert.Equal(t, want[i].Path, r.Path)
+		assert.Equal(t, want[i].Variable, r.Variable)
+		assert.Equal(t, want[i].Value.Value, r.Value.Value)
+	}
+}
+
 func TestFind_error(t *testing.T) {
 	tests := map[string]struct {
 		path     string
@@ -60,6 +75,21 @@ func TestFindRegex(t *testing.T) {
 	}
 	results, err := FindRegex(testDataDir, vaultPassword, "test_.*")
 	assert.NoError(t, err)
+
+	for i, r := range results {
+		assert.Equal(t, want[i].Path, r.Path)
+		assert.Equal(t, want[i].Variable, r.Variable)
+		assert.Equal(t, want[i].Value.Value, r.Value.Value)
+	}
+}
+
+func TestFindRegexEncryptedString(t *testing.T) {
+	want := []Result{
+		{Path: testDataDir + "/group_vars/values.yaml", Variable: "myencrypted_var", Value: yaml.Node{Value: "this value is encrypted"}},
+	}
+	results, err := FindRegex(testDataDir, vaultPassword, "myencrypted_*")
+	assert.NoError(t, err)
+	assert.Len(t, results, len(want))
 
 	for i, r := range results {
 		assert.Equal(t, want[i].Path, r.Path)

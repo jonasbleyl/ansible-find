@@ -3,6 +3,7 @@ package ansible
 import (
 	"bytes"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -24,11 +25,22 @@ type Result struct {
 	Value    yaml.Node
 }
 
+func decryptVariable(v *yaml.Node, password string) {
+	if bytes.HasPrefix([]byte(v.Value), vaultHeader) {
+		decrypted, err := vault.Decrypt(v.Value, password)
+		if err != nil {
+			log.Fatal(err)
+		}
+		v.Value = decrypted
+	}
+}
+
 func Find(root, password, variable string) ([]Result, error) {
 	var results []Result
 
 	err := walk(root, password, func(path string, yml map[string]yaml.Node) {
 		if v, found := yml[variable]; found {
+			decryptVariable(&v, password)
 			results = append(results, Result{Path: path, Variable: variable, Value: v})
 		}
 	})
@@ -45,6 +57,7 @@ func FindRegex(root, password, variable string) ([]Result, error) {
 	err = walk(root, password, func(path string, yml map[string]yaml.Node) {
 		for k, v := range yml {
 			if rgx.MatchString(k) {
+				decryptVariable(&v, password)
 				results = append(results, Result{Path: path, Variable: k, Value: v})
 			}
 		}
